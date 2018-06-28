@@ -22,52 +22,56 @@ namespace LibForge.Midi
     {
       var r = new RBMid();
       r.Format = Int();
-      if(r.Format != RBMid.FORMAT_RB4 && r.Format != RBMid.FORMAT_RBVR)
+      if(r.Format != RBMid.FORMAT_RB4 && r.Format != RBMid.FORMAT_RBVR && r.Format != RBMid.FORMAT_MID)
       {
-        throw new Exception($"Invalid magic number (expected 10 or 2f, got {r.Format:X}");
+        throw new Exception($"Invalid magic number (expected 2, 10, or 2f but got {r.Format:X}");
       }
-      r.Lyrics = Arr(ReadLyrics, MaxInstTracks);
-      var numTracks = (uint)r.Lyrics.Length;
-      r.DrumFills = Arr(ReadDrumFills, numTracks);
-      r.Anims = Arr(ReadAnims, numTracks);
-      r.ProMarkers = Arr(ReadMarkers, numTracks);
-      r.LaneMarkers = Arr(ReadUnktrack, numTracks);
-      r.TrillMarkers = Arr(ReadUnktrack2, numTracks);
-      r.DrumMixes = Arr(ReadDrumMixes, numTracks);
-      r.GemTracks = Arr(ReadGemTracks, numTracks);
-      r.OverdriveSoloSections = Arr(ReadOverdrives, numTracks);
-      r.VocalTracks = Arr(ReadVocalTrack, MaxVocalTracks);
-      r.UnknownOne = Check(Int(), 1);
-      r.UnknownNegOne = Check(Int(), -1);
-      r.UnknownHundred = Check(Float(), 100f);
-      r.Unknown4 = Arr(ReadUnkstruct1);
-      r.VocalRange = Arr(ReadVocalTrackRange);
-      r.HopoThreshold = Int();
-      r.NumPlayableTracks = Check(UInt(), numTracks);
-      r.FinalEventTick = UInt();
-      if(r.Format == RBMid.FORMAT_RBVR)
+      
+      if(r.Format != RBMid.FORMAT_MID)
       {
-        r.UnkVrTick = UInt();
-      }
-      r.UnknownZeroByte = Check(Byte(), (byte)0);
-      r.PreviewStartMillis = Float();
-      r.PreviewEndMillis = Float();
-      r.HandMaps = Arr(() => Arr(ReadMap), numTracks);
-      r.GuitarLeftHandPos = Arr(() => Arr(ReadHandPos), numTracks);
-      r.StrumMaps = Arr(() => Arr(ReadMap), numTracks);
+        r.Lyrics = Arr(ReadLyrics, MaxInstTracks);
+        var numTracks = (uint)r.Lyrics.Length;
+        r.DrumFills = Arr(ReadDrumFills, numTracks);
+        r.Anims = Arr(ReadAnims, numTracks);
+        r.ProMarkers = Arr(ReadMarkers, numTracks);
+        r.LaneMarkers = Arr(ReadUnktrack, numTracks);
+        r.TrillMarkers = Arr(ReadUnktrack2, numTracks);
+        r.DrumMixes = Arr(ReadDrumMixes, numTracks);
+        r.GemTracks = Arr(ReadGemTracks, numTracks);
+        r.OverdriveSoloSections = Arr(ReadOverdrives, numTracks);
+        r.VocalTracks = Arr(ReadVocalTrack, MaxVocalTracks);
+        r.UnknownOne = Check(Int(), 1);
+        r.UnknownNegOne = Check(Int(), -1);
+        r.UnknownHundred = Check(Float(), 100f);
+        r.Unknown4 = Arr(ReadUnkstruct1);
+        r.VocalRange = Arr(ReadVocalTrackRange);
+        r.HopoThreshold = Int();
+        r.NumPlayableTracks = Check(UInt(), numTracks);
+        r.FinalEventTick = UInt();
+        if(r.Format == RBMid.FORMAT_RBVR)
+        {
+          r.UnkVrTick = UInt();
+        }
+        r.UnknownZeroByte = Check(Byte(), (byte)0);
+        r.PreviewStartMillis = Float();
+        r.PreviewEndMillis = Float();
+        r.HandMaps = Arr(() => Arr(ReadMap), numTracks);
+        r.GuitarLeftHandPos = Arr(() => Arr(ReadHandPos), numTracks);
+        r.StrumMaps = Arr(() => Arr(ReadMap), numTracks);
 
-      r.MarkupSoloNotes1 = Arr(ReadMarkupSoloNotes);
-      r.MarkupLoop1 = Arr(ReadTwoTicks);
-      r.MarkupChords1 = Arr(ReadMarkupChord);
-      r.MarkupSoloNotes2 = Arr(ReadMarkupSoloNotes);
-      r.MarkupSoloNotes3 = Arr(ReadMarkupSoloNotes);
-      r.MarkupLoop2 = Arr(ReadTwoTicks);
+        r.MarkupSoloNotes1 = Arr(ReadMarkupSoloNotes);
+        r.MarkupLoop1 = Arr(ReadTwoTicks);
+        r.MarkupChords1 = Arr(ReadMarkupChord);
+        r.MarkupSoloNotes2 = Arr(ReadMarkupSoloNotes);
+        r.MarkupSoloNotes3 = Arr(ReadMarkupSoloNotes);
+        r.MarkupLoop2 = Arr(ReadTwoTicks);
 
-      if(r.Format == RBMid.FORMAT_RBVR)
-      {
-        r.VREvents = ReadVREvents();
+        if(r.Format == RBMid.FORMAT_RBVR)
+        {
+          r.VREvents = ReadVREvents();
+        }
+        r.UnknownTwo = Check(Int(), 2);
       }
-      r.UnknownTwo = Check(Int(), 2);
       r.LastMarkupEventTick = UInt();
       r.MidiTracks = Arr(ReadMidiTrack);
       r.FinalTick = UInt();

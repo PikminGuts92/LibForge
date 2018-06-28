@@ -614,12 +614,21 @@ if(format == 0x10 || format == 0x2f){ // rbmid_ps4/pc
     // File End
 }
 else if(format == 0x2){ // mid_ps4/pc
-    char header[29];
-    PSTR seq_name;
-    char unk;
-    int unk2;
-    int num_msgs;
-    int unk3;
-    int unk4;
-    midi_message msgs[num_msgs];
+    tick_t LastMarkupEventTick;
+    int num_midi_tracks;
+    MIDITRACK tracks[num_midi_tracks]<optimize=false>;
+    tick_t SomeLastTick;
+    uint NumMeasures;
+    uint unknown[6];
+    tick_t SomeLastTickMinus1;
+    float unk_floats[4];
+    int num_tempos;
+    TEMPO tempos[num_tempos];
+    int num_time_sigs;
+    TIMESIG time_signatures[num_time_sigs];
+    int num_beats;
+    BEAT beats[num_beats];
+    int unk_zero;
+    int num_midi_track_names;
+    PSTR midi_track_names[num_midi_track_names]<optimize=false>;
 }

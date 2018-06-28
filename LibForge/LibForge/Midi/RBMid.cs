@@ -323,6 +323,7 @@ namespace LibForge.Midi
       public UNKSTRUCT6[] UnkStruct6;
     }
 
+    public const int FORMAT_MID = 0x02; // AMP/RBVR
     public const int FORMAT_RB4 = 0x10;
     public const int FORMAT_RBVR = 0x2F;
     public int Format;
