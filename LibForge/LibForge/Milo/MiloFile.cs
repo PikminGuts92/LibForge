@@ -50,8 +50,8 @@ namespace LibForge.Milo
     {
       int version = stream.ReadInt32BE();
 
-      if (version != 28)
-        throw new Exception("Unsupported milo directory version");
+      if (!(version == 25 || version == 28)) // RBN1 and RBN2 milos
+        throw new Exception($"Milo directory version of {version} is not supported");
 
       string dirType = stream.ReadLengthUTF8(true), dirName = stream.ReadLengthUTF8(true);
       MiloFile milo = new MiloFile(dirType, dirName);
