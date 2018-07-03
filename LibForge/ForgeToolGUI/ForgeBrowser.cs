@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -40,7 +41,7 @@ namespace ForgeToolGUI
 
     private void FinishLoad()
     {
-      closeToolStripMenuItem.Enabled = true;
+      closePackageMenuItem.Enabled = true;
       void AddNodes(GameArchives.IDirectory dir, TreeNodeCollection nodes)
       {
         foreach (var d in dir.Dirs)
@@ -70,14 +71,14 @@ namespace ForgeToolGUI
         state.pkg.Dispose();
         state.pkg = null;
       }
-      closeToolStripMenuItem.Enabled = false;
+      closePackageMenuItem.Enabled = false;
       state.Loaded = false;
     }
 
     private void openToolStripMenuItem_Click(object sender, EventArgs e)
     {
       OpenFileDialog of = new OpenFileDialog();
-      of.Filter = "Ark Header (*.hdr)|*.hdr|PFS Image (*.dat)|*.dat";
+      of.Filter = "Supported Packages (*.hdr, *.dat)|*.hdr;*.dat";
       if(of.ShowDialog(this) == DialogResult.OK)
       {
         LoadPackage(of.FileName);
@@ -94,224 +95,45 @@ namespace ForgeToolGUI
       Application.Exit();
     }
 
-    private void treeView1_AfterSelect(object sender, TreeViewEventArgs e)
+    private void previewSelectedNode(object sender, EventArgs e)
     {
-      switch (e.Node.Tag)
+      switch (fileTreeView.SelectedNode?.Tag)
       {
         case null:
           break;
         case GameArchives.IFile i:
-          if (i.Name.Contains(".bmp_") || i.Name.Contains(".png_"))
+          try
           {
-            using (var s = i.GetStream())
-            {
-              var tex = TextureReader.ReadStream(s);
-              pictureBox1.Width = tex.Mipmaps[0].Width;
-              pictureBox1.Height = tex.Mipmaps[0].Height;
-              tabControl1.SelectTab(0);
-              fileTreeView.Select();
-              try
-              {
-                pictureBox1.Image = TextureConverter.ToBitmap(tex, 0);
-              }
-              catch(Exception ex)
-              {
-                MessageBox.Show("Couldn't load texture: " + ex.Message);
-              }
-            }
+            OpenFile(i);
           }
-          else if(i.Name.Contains("_dta_") || i.Name.EndsWith(".dtb"))
+          catch(Exception ex)
           {
-            using (var s = i.GetStream())
-            {
-              var data = DtxCS.DTX.FromDtb(s);
-              tabControl1.SelectTab(1);
-              fileTreeView.Select();
-              var sb = new StringBuilder();
-              foreach (var x in data.Children)
-              {
-                sb.AppendLine(x.ToString(0));
-              }
-              dataTextBox.Text = sb.ToString();
-            }
-          }
-          else if(i.Name.EndsWith(".dta") || i.Name.EndsWith(".moggsong"))
-          {
-            using (var s = i.GetStream())
-            using (var r = new System.IO.StreamReader(s))
-            {
-              tabControl1.SelectTab(1);
-              fileTreeView.Select();
-              dataTextBox.Text = r.ReadToEnd();
-            }
-          }
-          else if(i.Name.Contains(".songdta"))
-          {
-            using (var s = i.GetStream())
-            {
-              var songData = SongDataReader.ReadStream(s);
-              songDataInspector1.UpdateValues(songData);
-              tabControl1.SelectTab(2);
-              fileTreeView.Select();
-            }
-          }
-          else if(i.Name.Contains(".fbx"))
-          {
-            using (var s = i.GetStream())
-            {
-              var mesh = HxMeshReader.ReadStream(s);
-              meshTextBox.Text = HxMeshConverter.ToObj(mesh);
-              tabControl1.SelectTab(3);
-              fileTreeView.Select();
-            }
-          }
-          else if(i.Name.Contains(".rbmid_"))
-          {
-            using (var s = i.GetStream())
-            {
-              var rbmid = RBMidReader.ReadStream(s);
-              ObjectPreview(rbmid);
-            }
-          }
-          else if(i.Name.Contains(".lipsync"))
-          {
-            using (var s = i.GetStream())
-            {
-              var lipsync = new LibForge.Lipsync.LipsyncReader(s).Read();
-              ObjectPreview(lipsync);
-            }
-          }
-          else if (i.Name.Contains(".rbsong"))
-          {
-            using (var s = i.GetStream())
-            {
-              var rbsong = new LibForge.RBSong.RBSongReader(s).Read();
-              ObjectPreview(rbsong);
-            }
+            MessageBox.Show("Couldn't load file: " + ex.Message);
           }
           break;
       }
     }
 
-    void ObjectPreview(object obj)
+    public void OpenFile(GameArchives.IFile i)
     {
-      treeView1.Nodes.Clear();
-      AddObjectNodes(obj, treeView1.Nodes);
-      tabControl1.SelectTab(4);
-      fileTreeView.Select();
-    }
-
-    /// <summary>
-    /// Adds the given object's public fields to the given TreeNodeCollection.
-    /// </summary>
-    void AddObjectNodes(object obj, TreeNodeCollection nodes)
-    {
-      if (obj == null) return;
-      var fields = obj.GetType().GetFields();
-      foreach(var f in fields)
+      var inspector = InspectorFactory.GetInspector(InspectorFactory.LoadObject(i));
+      if (inspector != null)
       {
-        if (f.IsLiteral) continue;
-        if (f.FieldType.IsPrimitive || f.FieldType == typeof(string) || f.FieldType.IsEnum)
-        {
-          nodes.Add(f.Name + " = " + f.GetValue(obj).ToString());
-        }
-        else if(f.FieldType.IsArray)
-        {
-          AddArrayNodes(f.GetValue(obj) as Array, f.Name, nodes);
-        }
-        else
-        {
-          var node = new TreeNode(f.Name);
-          AddObjectNodes(f.GetValue(obj), node.Nodes);
-          nodes.Add(node);
-        }
+        OpenTab(inspector, i.Name);
+        fileTreeView.Select();
       }
     }
 
-    void AddForgeVal(string name, Value value, TreeNodeCollection nodes)
+    public void OpenTab(Inspector c, string name)
     {
-      if(value is StructValue)
-      {
-        var no = new TreeNode($"{name}: Struct");
-        foreach (var x in (value as StructValue).Props)
-        {
-          AddForgeProp(x, no.Nodes);
-        }
-        nodes.Add(no);
-      }
-      else if(value is ArrayValue)
-      {
-        var arr = value as ArrayValue;
-        var no = new TreeNode($"{name}: {(arr.Type as ArrayType).ElementType.InternalType}[] ({arr.Data.Length})");
-        for(var i = 0; i < arr.Data.Length; i++)
-        {
-          AddForgeVal(name + "[" + i + "]", arr.Data[i], no.Nodes);
-        }
-        nodes.Add(no);
-      }
-      else if(value is PropRef)
-      {
-        var driv = value as PropRef;
-        nodes.Add($"{name}: DrivenProp [{driv.ClassName} {driv.PropertyName}] ({driv.Unknown1},{driv.Unknown2}, {driv.Unknown3})");
-      }
-      else
-      {
-        var data = value.GetType().GetField("Data").GetValue(value);
-        nodes.Add(name + ": " + value.Type.InternalType.ToString() + " = " + data.ToString());
-      }
+      var x = new TabPage(name);
+      x.Controls.Add(c);
+      c.SetBrowser(this);
+      c.Dock = DockStyle.Fill;
+      tabControl1.TabPages.Add(x);
+      tabControl1.SelectedTab = x;
     }
 
-    void AddForgeProp(Property prop, TreeNodeCollection nodes)
-    {
-      if (prop.Value == null) return;
-      AddForgeVal(prop.Name, prop.Value, nodes);
-    }
-
-    /// <summary>
-    /// Adds the given array to the given TreeNodeCollection.
-    /// </summary>
-    void AddArrayNodes(Array arr, string name, TreeNodeCollection nodes)
-    {
-      var node = new TreeNode($"{name} ({arr.Length})");
-      var eType = arr.GetType().GetElementType();
-      if (eType.IsPrimitive || eType == typeof(string) || eType.IsEnum)
-        for (var i = 0; i < arr.Length; i++)
-        {
-          var n = new TreeNode($"{name}[{i}] = {arr.GetValue(i)}");
-          node.Nodes.Add(n);
-        }
-      else for (var i = 0; i < arr.Length; i++)
-        {
-          var myName = $"{name}[{i}]";
-          if (eType.IsArray)
-            AddArrayNodes(arr.GetValue(i) as Array, myName, node.Nodes);
-          else
-          {
-            var obj = arr.GetValue(i);
-
-            if (obj is Property)
-            {
-              AddForgeProp(obj as Property, node.Nodes);
-              continue;
-            }
-            if (obj is Value)
-            {
-              AddForgeVal(myName, obj as Value, node.Nodes);
-              continue;
-            }
-
-            System.Reflection.FieldInfo nameField;
-            if(null != (nameField = obj.GetType().GetField("Name")))
-            {
-              myName += $" (Name: {nameField.GetValue(obj)})";
-            }
-            var n = new TreeNode(myName);
-            AddObjectNodes(arr.GetValue(i), n.Nodes);
-            node.Nodes.Add(n);
-          }
-        }
-      nodes.Add(node);
-    }
 
     private void toolStripMenuItem1_Click(object sender, EventArgs e)
     {
@@ -322,6 +144,43 @@ namespace ForgeToolGUI
       {
         LoadFolder(of.SelectedPath);
       }
+    }
+
+    private void tabControl1_MouseClick(object sender, MouseEventArgs e)
+    {
+      if(e.Button == MouseButtons.Middle)
+      {
+        var tab =
+          tabControl1.TabPages.Cast<TabPage>()
+            .Where((t, i) => tabControl1.GetTabRect(i).Contains(e.Location))
+            .FirstOrDefault();
+        if (tab != null)
+          tabControl1.TabPages.Remove(tab);
+      }
+    }
+
+    private void fileTreeView_KeyPress(object sender, KeyPressEventArgs e)
+    {
+      if(e.KeyChar == '\r')
+      {
+        previewSelectedNode(sender, e);
+        e.Handled = true;
+      }
+    }
+
+    private void toolStripMenuItem2_Click(object sender, EventArgs e)
+    {
+      OpenFileDialog of = new OpenFileDialog();
+      if (of.ShowDialog(this) == DialogResult.OK)
+      {
+        OpenFile(GameArchives.Util.LocalFile(of.FileName));
+      }
+    }
+
+    private void toolStripMenuItem3_Click(object sender, EventArgs e)
+    {
+      if (tabControl1.SelectedTab != null)
+        tabControl1.TabPages.Remove(tabControl1.SelectedTab);
     }
   }
   public class ForgeBrowserState

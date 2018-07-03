@@ -116,7 +116,7 @@ namespace LibForge.Midi
       });
       Write(obj.Unknown3);
     }
-    private void WriteProCymbalMarkers(RBMid.CYMBALMARKER obj)
+    private void WriteProCymbalMarkers(RBMid.TOMMARKER obj)
     {
       Write(obj.Markers, o =>
       {
@@ -132,7 +132,7 @@ namespace LibForge.Midi
       {
         Write(marker.StartTick);
         Write(marker.EndTick);
-        Write((uint)marker.Flags);
+        Write((uint)marker.Lanes);
       }));
     }
     private void WriteTrillMarkers(RBMid.GTRTRILLS obj)
@@ -141,8 +141,8 @@ namespace LibForge.Midi
       {
         Write(o.StartTick);
         Write(o.EndTick);
-        Write(o.LowFret);
-        Write(o.HighFret);
+        Write(o.FirstFret);
+        Write(o.SecondFret);
       }));
     }
     private void WriteDrumMixes(RBMid.DRUMMIXES obj)
@@ -163,10 +163,10 @@ namespace LibForge.Midi
           Write(x.Lanes);
           Write(x.IsHopo);
           Write(x.NoTail);
-          Write(x.Unknown);
+          Write(x.ProCymbal);
         });
       });
-      Write(obj.Unknown);
+      Write(obj.HopoThreshold);
     }
     private void WriteSectionMarkers(RBMid.SECTIONS obj)
     {

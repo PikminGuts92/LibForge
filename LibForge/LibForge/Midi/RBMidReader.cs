@@ -130,12 +130,12 @@ namespace LibForge.Midi
       }),
       Unknown3 = Int()
     };
-    private RBMid.CYMBALMARKER ReadMarkers() => new RBMid.CYMBALMARKER
+    private RBMid.TOMMARKER ReadMarkers() => new RBMid.TOMMARKER
     {
-      Markers = Arr(() => new RBMid.CYMBALMARKER.MARKER
+      Markers = Arr(() => new RBMid.TOMMARKER.MARKER
       {
         Tick = UInt(),
-        Flags = (RBMid.CYMBALMARKER.MARKER.FLAGS)Int()
+        Flags = (RBMid.TOMMARKER.MARKER.FLAGS)Int()
       }),
       Unknown1 = Int(),
       Unknown2 = Int()
@@ -146,7 +146,7 @@ namespace LibForge.Midi
       {
         StartTick = UInt(),
         EndTick = UInt(),
-        Flags = (RBMid.LANEMARKER.MARKER.Flag)UInt()
+        Lanes = Int()
       }))
     };
     private RBMid.GTRTRILLS ReadUnktrack2() => new RBMid.GTRTRILLS
@@ -155,8 +155,8 @@ namespace LibForge.Midi
       {
         StartTick = UInt(),
         EndTick = UInt(),
-        LowFret = Int(),
-        HighFret = Int()
+        FirstFret = Int(),
+        SecondFret = Int()
       }))
     };
     private RBMid.DRUMMIXES ReadDrumMixes() => new RBMid.DRUMMIXES
@@ -174,9 +174,9 @@ namespace LibForge.Midi
         Lanes = Int(),
         IsHopo = Bool(),
         NoTail = Bool(),
-        Unknown = Int()
+        ProCymbal = Int()
       }))),
-      Unknown = Int()
+      HopoThreshold = Int()
     };
     private RBMid.SECTIONS ReadOverdrives() => new RBMid.SECTIONS
     {
